@@ -1,43 +1,56 @@
-import { Tabs } from 'expo-router';
-import { Home, BookOpen, Notebook, Trophy, User } from 'lucide-react-native';
 import { colors, fonts } from '@/constants/theme';
+import { Tabs } from 'expo-router';
+import { BookOpen, Home, Library, UserRound } from 'lucide-react-native';
 
-export default function TabsLayout() {
+export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.forest,
-        tabBarInactiveTintColor: colors.olive,
-        tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          backgroundColor: colors.cream,
-          borderTopWidth: 0,
-          height: 68,
-          paddingTop: 6,
-          paddingBottom: 10,
+          backgroundColor: colors.white,
+          borderTopColor: colors.cream,
         },
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Start', tabBarIcon: ({ color, size }) => <Home color={color} size={size} /> }}
+        options={{
+          title: 'Start',
+          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+        }}
       />
       <Tabs.Screen
         name="atlas"
-        options={{ title: 'Atlas', tabBarIcon: ({ color, size }) => <BookOpen color={color} size={size} /> }}
+        options={{
+          title: 'Atlas',
+          tabBarIcon: ({ color, size }) => <Library size={size} color={color} />,
+        }}
       />
       <Tabs.Screen
         name="journal"
-        options={{ title: 'Dziennik', tabBarIcon: ({ color, size }) => <Notebook color={color} size={size} /> }}
+        options={{
+          title: 'Dziennik',
+          tabBarIcon: ({ color, size }) => <BookOpen size={size} color={color} />,
+        }}
       />
       <Tabs.Screen
         name="collection"
-        options={{ title: 'Kolekcja', tabBarIcon: ({ color, size }) => <Trophy color={color} size={size} /> }}
+        options={{
+          title: 'Kolekcja',
+          tabBarIcon: ({ color, size }) => <Library size={size} color={color} />,
+        }}
       />
       <Tabs.Screen
         name="profile"
-        options={{ title: 'Profil', tabBarIcon: ({ color, size }) => <User color={color} size={size} /> }}
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ color, size }) => <UserRound size={size} color={color} />,
+        }}
       />
     </Tabs>
   );
