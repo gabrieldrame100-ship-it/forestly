@@ -1,3 +1,4 @@
+import AchievementCelebration from '@/components/AchievementCelebration';
 import LoadingScreen from '@/components/LoadingScreen';
 import { UserDataProvider } from '@/context/UserDataContext';
 import { DATABASE_NAME } from '@/database/database';
@@ -14,7 +15,6 @@ import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { Suspense, useEffect } from 'react';
-
 SplashScreen.preventAutoHideAsync();
 export { ErrorBoundary } from 'expo-router';
 
@@ -39,7 +39,8 @@ export default function RootLayout() {
           <StatusBar style="dark" />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
-          </Stack>
+          
+              <AchievementCelebration /></Stack>
         </UserDataProvider>
       </SQLiteProvider>
     </Suspense>

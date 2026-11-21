@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-// Zwiększ ten numer, gdy dodasz nową migrację poniżej.
-const DATABASE_VERSION = 2;
+
+const DATABASE_VERSION = 3;
 
 export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA foreign_keys = ON;');
@@ -56,5 +56,15 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
     currentVersion = 2;
   }
 
+    if (currentVersion === 2) {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS achievements (
+        id TEXT PRIMARY KEY NOT NULL,
+        unlocked_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
+    currentVersion = 3;
+  }
+  
   await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
 }

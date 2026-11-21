@@ -1,3 +1,16 @@
+import CarouselCard from '@/components/CarouselCard';
+import CustomButton from '@/components/CustomButton';
+import FilterChips from '@/components/FilterChips';
+import FilterSheet from '@/components/FilterSheet';
+import GridTile from '@/components/GridTile';
+import SearchBar from '@/components/SearchBar';
+import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { useUserData } from '@/context/UserDataContext';
+import { mushrooms } from '@/data/mushrooms';
+import { useAtlasFilters } from '@/hooks/useAtlasFilters';
+import { Category, Mushroom } from '@/types/mushroom';
+import { useRouter } from 'expo-router';
+import { ArrowLeftRight, CalendarDays, GalleryHorizontal, LayoutGrid, SlidersHorizontal } from 'lucide-react-native';
 import { useState } from 'react';
 import {
   Animated,
@@ -9,20 +22,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GalleryHorizontal, LayoutGrid, SlidersHorizontal } from 'lucide-react-native';
-import CarouselCard from '@/components/CarouselCard';
-import CustomButton from '@/components/CustomButton';
-import FilterChips from '@/components/FilterChips';
-import FilterSheet from '@/components/FilterSheet';
-import GridTile from '@/components/GridTile';
-import SearchBar from '@/components/SearchBar';
-import { useUserData } from '@/context/UserDataContext';
-import { mushrooms } from '@/data/mushrooms';
-import { useAtlasFilters } from '@/hooks/useAtlasFilters';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { Category, Mushroom } from '@/types/mushroom';
 
 const CARD_GAP = 14;
 const GRID_COLUMNS = 3;
@@ -37,16 +37,17 @@ const categoryOptions: { value: Category | 'all'; label: string }[] = [
 
 type ViewMode = 'carousel' | 'grid';
 
-export default function AtlasScreen() {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const { favoriteIds, toggleFavorite } = useUserData();
-  const filters = useAtlasFilters(favoriteIds);
-  const { results } = filters;
+type CarouselViewProps = {
+  data: Mushroom[];
+  favoriteIds: Set<string>;
+  onToggleFavorite: (id: string) => void;
+  onOpen: (id: string) => void;
+};
 
-  const [viewMode, setViewMode] = useState<ViewMode>('carousel');
-  const [sheetOpen, setSheetOpen] = useState(false);
+// Karuzela ma własny stan (pozycję przewijania). Ekran nadaje jej `key`, więc po zmianie
+// filtrów albo widoku powstaje od nowa i sama zaczyna od pierwszej karty.
+function CarouselView({ data, favoriteIds, onToggleFavorite, onOpen }: CarouselViewProps) {
+  const { width, height } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const [scrollX] = useState(() => new Animated.Value(0));
 
@@ -54,13 +55,6 @@ export default function AtlasScreen() {
   const cardHeight = Math.min(cardWidth * 1.45, height * 0.5);
   const interval = cardWidth + CARD_GAP;
   const sidePadding = (width - cardWidth) / 2;
-
-  const gridPadding = spacing.lg;
-  const tileSize =
-    (width - gridPadding * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
-
-  const openDetail = (id: string) =>
-    router.push({ pathname: '/mushroom/[id]', params: { id } });
 
   const renderCard = ({ item, index: itemIndex }: ListRenderItemInfo<Mushroom>) => (
     <CarouselCard
@@ -71,10 +65,52 @@ export default function AtlasScreen() {
       height={cardHeight}
       interval={interval}
       isFavorite={favoriteIds.has(item.id)}
-      onToggleFavorite={() => toggleFavorite(item.id)}
-      onPress={() => openDetail(item.id)}
+      onToggleFavorite={() => onToggleFavorite(item.id)}
+      onPress={() => onOpen(item.id)}
     />
   );
+
+  return (
+    <View style={styles.carouselArea}>
+      <Animated.FlatList
+        data={data}
+        horizontal
+        keyExtractor={(item: Mushroom) => item.id}
+        renderItem={renderCard}
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={interval}
+        decelerationRate="fast"
+        contentContainerStyle={{ paddingHorizontal: sidePadding }}
+        ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
+        style={{ flexGrow: 0 }}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+          useNativeDriver: true,
+        })}
+        onMomentumScrollEnd={(event) => setIndex(Math.round(event.nativeEvent.contentOffset.x / interval))}
+      />
+      <Text style={styles.counter}>
+        {Math.min(index + 1, data.length)} / {data.length}
+      </Text>
+    </View>
+  );
+}
+
+export default function AtlasScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const { favoriteIds, toggleFavorite } = useUserData();
+  const filters = useAtlasFilters(favoriteIds);
+  const { results } = filters;
+
+  const [viewMode, setViewMode] = useState<ViewMode>('carousel');
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const gridPadding = spacing.lg;
+  const tileSize = (width - gridPadding * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
+
+  const openDetail = (id: string) => router.push({ pathname: '/mushroom/[id]', params: { id } });
 
   const renderTile = ({ item }: ListRenderItemInfo<Mushroom>) => (
     <GridTile
@@ -95,22 +131,36 @@ export default function AtlasScreen() {
               {results.length} z {mushrooms.length} gatunków
             </Text>
           </View>
-          <Pressable
-            style={styles.iconButton}
-            onPress={() =>
-              setViewMode((mode) => (mode === 'carousel' ? 'grid' : 'carousel'))
-            }
-            accessibilityRole="button"
-            accessibilityLabel={
-              viewMode === 'carousel' ? 'Pokaż siatkę' : 'Pokaż karuzelę'
-            }
-          >
-            {viewMode === 'carousel' ? (
-              <LayoutGrid size={20} color={colors.forest} />
-            ) : (
-              <GalleryHorizontal size={20} color={colors.forest} />
-            )}
-          </Pressable>
+          <View style={styles.actions}>
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => router.push('/calendar')}
+              accessibilityRole="button"
+              accessibilityLabel="Kalendarz sezonowości"
+            >
+              <CalendarDays size={20} color={colors.forest} />
+            </Pressable>
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => router.push('/compare')}
+              accessibilityRole="button"
+              accessibilityLabel="Porównaj gatunki"
+            >
+              <ArrowLeftRight size={20} color={colors.forest} />
+            </Pressable>
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => setViewMode((mode) => (mode === 'carousel' ? 'grid' : 'carousel'))}
+              accessibilityRole="button"
+              accessibilityLabel={viewMode === 'carousel' ? 'Pokaż siatkę' : 'Pokaż karuzelę'}
+            >
+              {viewMode === 'carousel' ? (
+                <LayoutGrid size={20} color={colors.forest} />
+              ) : (
+                <GalleryHorizontal size={20} color={colors.forest} />
+              )}
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.searchRow}>
@@ -132,11 +182,7 @@ export default function AtlasScreen() {
           </Pressable>
         </View>
 
-        <FilterChips
-          options={categoryOptions}
-          value={filters.category}
-          onChange={filters.setCategory}
-        />
+        <FilterChips options={categoryOptions} value={filters.category} onChange={filters.setCategory} />
       </View>
 
       {results.length === 0 ? (
@@ -150,34 +196,13 @@ export default function AtlasScreen() {
           <CustomButton title="Wyczyść filtry" onPress={filters.resetAll} />
         </View>
       ) : viewMode === 'carousel' ? (
-        <View style={styles.carouselArea}>
-          <Animated.FlatList
-            key={filters.signature}
-            data={results}
-            horizontal
-            keyExtractor={(item: Mushroom) => item.id}
-            renderItem={renderCard}
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={interval}
-            decelerationRate="fast"
-            contentContainerStyle={{ paddingHorizontal: sidePadding }}
-            ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
-            style={{ flexGrow: 0 }}
-            scrollEventThrottle={16}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-              { useNativeDriver: true },
-            )}
-            onMomentumScrollEnd={(event) =>
-              setIndex(
-                Math.round(event.nativeEvent.contentOffset.x / interval),
-              )
-            }
-          />
-          <Text style={styles.counter}>
-            {Math.min(index + 1, results.length)} / {results.length}
-          </Text>
-        </View>
+        <CarouselView
+          key={filters.signature}
+          data={results}
+          favoriteIds={favoriteIds}
+          onToggleFavorite={toggleFavorite}
+          onOpen={openDetail}
+        />
       ) : (
         <FlatList
           key="grid"
@@ -223,6 +248,7 @@ const styles = StyleSheet.create({
   },
   title: { fontFamily: fonts.bold, fontSize: 28, color: colors.forest },
   subtitle: { fontFamily: fonts.regular, fontSize: 14, color: colors.olive },
+  actions: { flexDirection: 'row', gap: spacing.sm },
   iconButton: {
     width: 44,
     height: 44,

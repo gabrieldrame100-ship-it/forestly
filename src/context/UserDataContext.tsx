@@ -1,4 +1,6 @@
 import LoadingScreen from '@/components/LoadingScreen';
+import { Achievement, achievements } from '@/data/achievements';
+import { getTripCount, getUnlockedAchievementIds, unlockAchievement } from '@/database/collectionRepository';
 import {
   getDiscoveredIds,
   getFavoriteIds,
@@ -6,17 +8,20 @@ import {
   setFavorite,
 } from '@/database/userDataRepository';
 import { useSQLiteContext } from 'expo-sqlite';
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
 type UserDataValue = {
   favoriteIds: Set<string>;
   discoveredIds: Set<string>;
+  unlockedAchievementIds: Set<string>;
+  tripCount: number;
+  celebration: Achievement | null; // osiągnięcie, które właśnie wyświetlamy
   toggleFavorite: (id: string) => Promise<void>;
   toggleDiscovered: (id: string) => Promise<void>;
   reload: () => Promise<void>;
+  dismissCelebration: () => void;
 };
-
 
 const UserDataContext = createContext<UserDataValue | null>(null);
 
@@ -31,17 +36,35 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
   const db = useSQLiteContext();
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [discoveredIds, setDiscoveredIds] = useState<Set<string>>(new Set());
+  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
+  const [tripCount, setTripCount] = useState(0);
+  const [celebrationQueue, setCelebrationQueue] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pierwsze sprawdzenie osiągnięć po starcie przebiega po cichu, bez animacji.
+  const syncedRef = useRef(false);
+  // Osiągnięcia, które właśnie zapisujemy (żeby nie zapisać ich dwa razy).
+  const pendingRef = useRef(new Set<string>());
+
+  const fetchAll = useCallback(async () => {
+    const [favorites, discovered, unlocked, trips] = await Promise.all([
+      getFavoriteIds(db),
+      getDiscoveredIds(db),
+      getUnlockedAchievementIds(db),
+      getTripCount(db),
+    ]);
+    setFavoriteIds(new Set(favorites));
+    setDiscoveredIds(new Set(discovered));
+    setUnlockedIds(new Set(unlocked));
+    setTripCount(trips);
+  }, [db]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const [favorites, discovered] = await Promise.all([getFavoriteIds(db), getDiscoveredIds(db)]);
-        if (cancelled) return;
-        setFavoriteIds(new Set(favorites));
-        setDiscoveredIds(new Set(discovered));
+        await fetchAll();
       } catch (error) {
         console.error('Błąd odczytu danych użytkownika', error);
         Alert.alert('Błąd', 'Nie udało się wczytać zapisanych danych.');
@@ -54,7 +77,34 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [db]);
+  }, [fetchAll]);
+
+  // Sprawdza, czy użytkownik zdobył nowe osiągnięcia.
+  useEffect(() => {
+    if (loading) return;
+
+    const progress = { species: discoveredIds.size, trips: tripCount };
+    const fresh = achievements.filter(
+      (a) => progress[a.metric] >= a.target && !unlockedIds.has(a.id) && !pendingRef.current.has(a.id)
+    );
+
+    const isFirstCheck = !syncedRef.current;
+    syncedRef.current = true;
+    if (fresh.length === 0) return;
+
+    fresh.forEach((a) => pendingRef.current.add(a.id));
+
+    (async () => {
+      try {
+        for (const achievement of fresh) await unlockAchievement(db, achievement.id);
+        setUnlockedIds((prev) => new Set([...prev, ...fresh.map((a) => a.id)]));
+        if (!isFirstCheck) setCelebrationQueue((prev) => [...prev, ...fresh]);
+      } catch (error) {
+        console.error(error);
+        fresh.forEach((a) => pendingRef.current.delete(a.id));
+      }
+    })();
+  }, [loading, discoveredIds, tripCount, unlockedIds, db]);
 
   // Najpierw zmieniamy ekran (szybka reakcja), potem zapisujemy w bazie.
   // Jeśli zapis się nie uda, cofamy zmianę i informujemy użytkownika.
@@ -87,20 +137,43 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     },
     [db, discoveredIds]
   );
+
   // Wczytuje dane ponownie (np. po zapisaniu wyprawy), bez ekranu ładowania.
   const reload = useCallback(async () => {
     try {
-      const [favorites, discovered] = await Promise.all([getFavoriteIds(db), getDiscoveredIds(db)]);
-      setFavoriteIds(new Set(favorites));
-      setDiscoveredIds(new Set(discovered));
+      await fetchAll();
     } catch (error) {
       console.error(error);
     }
-  }, [db]);
+  }, [fetchAll]);
 
-   const value = useMemo(
-    () => ({ favoriteIds, discoveredIds, toggleFavorite, toggleDiscovered, reload }),
-    [favoriteIds, discoveredIds, toggleFavorite, toggleDiscovered, reload]
+  const dismissCelebration = useCallback(() => {
+    setCelebrationQueue((prev) => prev.slice(1));
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      favoriteIds,
+      discoveredIds,
+      unlockedAchievementIds: unlockedIds,
+      tripCount,
+      celebration: celebrationQueue[0] ?? null,
+      toggleFavorite,
+      toggleDiscovered,
+      reload,
+      dismissCelebration,
+    }),
+    [
+      favoriteIds,
+      discoveredIds,
+      unlockedIds,
+      tripCount,
+      celebrationQueue,
+      toggleFavorite,
+      toggleDiscovered,
+      reload,
+      dismissCelebration,
+    ]
   );
 
   if (loading) return <LoadingScreen />;
