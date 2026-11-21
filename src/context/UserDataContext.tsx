@@ -1,9 +1,9 @@
 import LoadingScreen from '@/components/LoadingScreen';
 import {
-    getDiscoveredIds,
-    getFavoriteIds,
-    setDiscovered,
-    setFavorite,
+  getDiscoveredIds,
+  getFavoriteIds,
+  setDiscovered,
+  setFavorite,
 } from '@/database/userDataRepository';
 import { useSQLiteContext } from 'expo-sqlite';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
@@ -14,7 +14,9 @@ type UserDataValue = {
   discoveredIds: Set<string>;
   toggleFavorite: (id: string) => Promise<void>;
   toggleDiscovered: (id: string) => Promise<void>;
+  reload: () => Promise<void>;
 };
+
 
 const UserDataContext = createContext<UserDataValue | null>(null);
 
@@ -85,10 +87,20 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     },
     [db, discoveredIds]
   );
+  // Wczytuje dane ponownie (np. po zapisaniu wyprawy), bez ekranu ładowania.
+  const reload = useCallback(async () => {
+    try {
+      const [favorites, discovered] = await Promise.all([getFavoriteIds(db), getDiscoveredIds(db)]);
+      setFavoriteIds(new Set(favorites));
+      setDiscoveredIds(new Set(discovered));
+    } catch (error) {
+      console.error(error);
+    }
+  }, [db]);
 
-  const value = useMemo(
-    () => ({ favoriteIds, discoveredIds, toggleFavorite, toggleDiscovered }),
-    [favoriteIds, discoveredIds, toggleFavorite, toggleDiscovered]
+   const value = useMemo(
+    () => ({ favoriteIds, discoveredIds, toggleFavorite, toggleDiscovered, reload }),
+    [favoriteIds, discoveredIds, toggleFavorite, toggleDiscovered, reload]
   );
 
   if (loading) return <LoadingScreen />;

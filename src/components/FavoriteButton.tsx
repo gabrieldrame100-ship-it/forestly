@@ -1,12 +1,12 @@
 import { colors } from '@/constants/theme';
 import { Heart } from 'lucide-react-native';
-import { useRef } from 'react';
+import { useState } from 'react';
 import { Animated, Pressable, StyleSheet } from 'react-native';
 
 type Props = { active: boolean; onPress: () => void; size?: number };
 
 export default function FavoriteButton({ active, onPress, size = 20 }: Props) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const [scale] = useState(() => new Animated.Value(1));
 
   const handlePress = () => {
     Animated.sequence([
