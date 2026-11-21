@@ -3,7 +3,7 @@ export type TripPhoto = { id: number; fileName: string };
 export type Trip = {
   id: number;
   title: string;
-  tripDate: string; // format RRRR-MM-DD
+  tripDate: string;
   description: string;
   speciesIds: string[];
   photos: TripPhoto[];

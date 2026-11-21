@@ -6,7 +6,7 @@ import Svg, { Circle } from 'react-native-svg';
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 type Props = {
-  progress: number; // od 0 do 1
+  progress: number;
   label: string;
   sublabel: string;
   size?: number;
@@ -23,7 +23,7 @@ export default function ProgressRing({ progress, label, sublabel, size = 140, st
       toValue: progress,
       duration: 900,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: false, // właściwości SVG nie działają z natywnym sterownikiem
+      useNativeDriver: false,
     }).start();
   }, [progress, animated]);
 

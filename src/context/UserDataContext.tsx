@@ -16,7 +16,7 @@ type UserDataValue = {
   discoveredIds: Set<string>;
   unlockedAchievementIds: Set<string>;
   tripCount: number;
-  celebration: Achievement | null; // osiągnięcie, które właśnie wyświetlamy
+  celebration: Achievement | null;
   toggleFavorite: (id: string) => Promise<void>;
   toggleDiscovered: (id: string) => Promise<void>;
   reload: () => Promise<void>;
@@ -41,9 +41,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
   const [celebrationQueue, setCelebrationQueue] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Pierwsze sprawdzenie osiągnięć po starcie przebiega po cichu, bez animacji.
   const syncedRef = useRef(false);
-  // Osiągnięcia, które właśnie zapisujemy (żeby nie zapisać ich dwa razy).
   const pendingRef = useRef(new Set<string>());
 
   const fetchAll = useCallback(async () => {
@@ -79,7 +77,6 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     };
   }, [fetchAll]);
 
-  // Sprawdza, czy użytkownik zdobył nowe osiągnięcia.
   useEffect(() => {
     if (loading) return;
 
@@ -99,6 +96,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
         for (const achievement of fresh) await unlockAchievement(db, achievement.id);
         setUnlockedIds((prev) => new Set([...prev, ...fresh.map((a) => a.id)]));
         if (!isFirstCheck) setCelebrationQueue((prev) => [...prev, ...fresh]);
+        fresh.forEach((a) => pendingRef.current.delete(a.id));
       } catch (error) {
         console.error(error);
         fresh.forEach((a) => pendingRef.current.delete(a.id));
@@ -106,8 +104,6 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     })();
   }, [loading, discoveredIds, tripCount, unlockedIds, db]);
 
-  // Najpierw zmieniamy ekran (szybka reakcja), potem zapisujemy w bazie.
-  // Jeśli zapis się nie uda, cofamy zmianę i informujemy użytkownika.
   const toggleFavorite = useCallback(
     async (id: string) => {
       const value = !favoriteIds.has(id);
@@ -138,7 +134,6 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     [db, discoveredIds]
   );
 
-  // Wczytuje dane ponownie (np. po zapisaniu wyprawy), bez ekranu ładowania.
   const reload = useCallback(async () => {
     try {
       await fetchAll();

@@ -31,7 +31,6 @@ export default function DatePickerModal({ visible, value, onConfirm, onClose }: 
   const [viewMonth, setViewMonth] = useState(value.getMonth());
   const [selected, setSelected] = useState(value);
 
-  // Za każdym razem, gdy okno się otwiera, zaczynamy od aktualnie wybranej daty.
   useEffect(() => {
     if (visible) {
       setSelected(value);
@@ -46,7 +45,6 @@ export default function DatePickerModal({ visible, value, onConfirm, onClose }: 
     setViewMonth(next.getMonth());
   };
 
-  // Poniedziałek jest pierwszym dniem tygodnia.
   const offset = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const cells: (number | null)[] = [

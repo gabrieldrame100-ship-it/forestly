@@ -6,7 +6,7 @@ export type Achievement = {
   id: string;
   title: string;
   description: string;
-  metric: AchievementMetric; // co liczymy: poznane gatunki czy wyprawy
+  metric: AchievementMetric;
   target: number;
 };
 

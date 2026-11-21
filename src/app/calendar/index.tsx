@@ -15,7 +15,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const CHART_HEIGHT = 120;
 const categories: Category[] = ['edible', 'inedible', 'poisonous'];
 
-// Odmiana słowa „gatunek” dla liczb od 0 do 20.
 const speciesLabel = (n: number) => (n === 1 ? 'gatunek' : n >= 2 && n <= 4 ? 'gatunki' : 'gatunków');
 
 export default function CalendarScreen() {

@@ -29,7 +29,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MAX_PHOTOS = 10;
 
-// fileName === null oznacza zdjęcie dopiero wybrane, jeszcze niezapisane w pamięci aplikacji.
 type FormPhoto = { key: string; uri: string; fileName: string | null };
 
 type Props = { trip?: Trip };

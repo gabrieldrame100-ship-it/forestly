@@ -30,7 +30,6 @@ export default function CollectionScreen() {
 
   const [recent, setRecent] = useState<Discovery[]>([]);
 
-  // Ostatnio poznane gatunki wczytujemy za każdym razem, gdy ekran wraca na wierzch.
   useFocusEffect(
     useCallback(() => {
       let active = true;

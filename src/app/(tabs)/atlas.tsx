@@ -1,6 +1,6 @@
 import CarouselCard from '@/components/CarouselCard';
 import CustomButton from '@/components/CustomButton';
-import FilterChips from '@/components/FilterChips';
+import CategoryTiles from '@/components/CategoryTiles';
 import FilterSheet from '@/components/FilterSheet';
 import GridTile from '@/components/GridTile';
 import SearchBar from '@/components/SearchBar';
@@ -8,7 +8,7 @@ import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useUserData } from '@/context/UserDataContext';
 import { mushrooms } from '@/data/mushrooms';
 import { useAtlasFilters } from '@/hooks/useAtlasFilters';
-import { Category, Mushroom } from '@/types/mushroom';
+import { Mushroom } from '@/types/mushroom';
 import { useRouter } from 'expo-router';
 import { ArrowLeftRight, CalendarDays, GalleryHorizontal, LayoutGrid, SlidersHorizontal } from 'lucide-react-native';
 import { useState } from 'react';
@@ -28,13 +28,6 @@ const CARD_GAP = 14;
 const GRID_COLUMNS = 3;
 const GRID_GAP = 10;
 
-const categoryOptions: { value: Category | 'all'; label: string }[] = [
-  { value: 'all', label: 'Wszystkie' },
-  { value: 'edible', label: 'Jadalne' },
-  { value: 'inedible', label: 'Niejadalne' },
-  { value: 'poisonous', label: 'Trujące' },
-];
-
 type ViewMode = 'carousel' | 'grid';
 
 type CarouselViewProps = {
@@ -44,8 +37,6 @@ type CarouselViewProps = {
   onOpen: (id: string) => void;
 };
 
-// Karuzela ma własny stan (pozycję przewijania). Ekran nadaje jej `key`, więc po zmianie
-// filtrów albo widoku powstaje od nowa i sama zaczyna od pierwszej karty.
 function CarouselView({ data, favoriteIds, onToggleFavorite, onOpen }: CarouselViewProps) {
   const { width, height } = useWindowDimensions();
   const [index, setIndex] = useState(0);
@@ -182,7 +173,7 @@ export default function AtlasScreen() {
           </Pressable>
         </View>
 
-        <FilterChips options={categoryOptions} value={filters.category} onChange={filters.setCategory} />
+        <CategoryTiles value={filters.category} onChange={filters.setCategory} />
       </View>
 
       {results.length === 0 ? (

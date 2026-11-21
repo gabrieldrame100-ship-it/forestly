@@ -6,7 +6,6 @@ function ensureDirectory(): void {
   if (!photosDirectory.exists) photosDirectory.create();
 }
 
-// Kopiuje zdjęcie do pamięci aplikacji i zwraca samą nazwę pliku.
 export async function savePhoto(sourceUri: string): Promise<string> {
   ensureDirectory();
   const rawExtension = sourceUri.split('?')[0].split('.').pop()?.toLowerCase() ?? 'jpg';
@@ -16,7 +15,6 @@ export async function savePhoto(sourceUri: string): Promise<string> {
   return fileName;
 }
 
-// Ścieżkę budujemy z nazwy pliku przy każdym odczycie.
 export function getPhotoUri(fileName: string): string {
   return new File(photosDirectory, fileName).uri;
 }
@@ -27,5 +25,13 @@ export function deletePhoto(fileName: string): void {
     if (file.exists) file.delete();
   } catch (error) {
     console.warn('Nie udało się usunąć zdjęcia', error);
+  }
+}
+
+export function deleteAllPhotos(): void {
+  try {
+    if (photosDirectory.exists) photosDirectory.delete();
+  } catch (error) {
+    console.warn('Nie udało się usunąć zdjęć', error);
   }
 }

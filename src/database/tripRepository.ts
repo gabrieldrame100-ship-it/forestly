@@ -44,7 +44,6 @@ export async function getTripById(db: SQLiteDatabase, id: number): Promise<Trip 
   };
 }
 
-// Zapisuje zdjęcia i gatunki wyprawy. Gatunki trafiają też do poznanych.
 async function replaceRelations(db: SQLiteDatabase, tripId: number, input: TripInput): Promise<void> {
   await db.runAsync('DELETE FROM trip_photos WHERE trip_id = ?', tripId);
   await db.runAsync('DELETE FROM trip_species WHERE trip_id = ?', tripId);
@@ -86,7 +85,6 @@ export async function updateTrip(db: SQLiteDatabase, id: number, input: TripInpu
   });
 }
 
-// Zwraca nazwy plików zdjęć, żeby wywołujący mógł je usunąć z pamięci telefonu.
 export async function deleteTrip(db: SQLiteDatabase, id: number): Promise<string[]> {
   const photos = await db.getAllAsync<{ file_name: string }>(
     'SELECT file_name FROM trip_photos WHERE trip_id = ?',

@@ -11,13 +11,13 @@ export type Mushroom = {
   category: Category;
   description: string;
   habitats: Habitat[];
-  seasonFrom: number; // month 1-12
-  seasonTo: number; // month 1-12
+  seasonFrom: number;
+  seasonTo: number;
   cap: string;
   stem: string;
   hymenophore: string;
   funFacts: string[];
-  similar: string[]; // ids of similar-looking species
+  similar: string[];
   warning?: string;
   image?: ImageSourcePropType;
 };

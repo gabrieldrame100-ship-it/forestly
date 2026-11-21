@@ -1,8 +1,3 @@
-import AchievementCelebration from '@/components/AchievementCelebration';
-import LoadingScreen from '@/components/LoadingScreen';
-import { UserDataProvider } from '@/context/UserDataContext';
-import { DATABASE_NAME } from '@/database/database';
-import { migrateDbIfNeeded } from '@/database/migrations';
 import {
   Manrope_400Regular,
   Manrope_500Medium,
@@ -15,8 +10,16 @@ import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { Suspense, useEffect } from 'react';
-SplashScreen.preventAutoHideAsync();
+import AchievementCelebration from '@/components/AchievementCelebration';
+import LoadingScreen from '@/components/LoadingScreen';
+import { ProfileProvider } from '@/context/ProfileContext';
+import { UserDataProvider } from '@/context/UserDataContext';
+import { DATABASE_NAME } from '@/database/database';
+import { migrateDbIfNeeded } from '@/database/migrations';
+
 export { ErrorBoundary } from 'expo-router';
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -36,11 +39,13 @@ export default function RootLayout() {
     <Suspense fallback={<LoadingScreen />}>
       <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDbIfNeeded} useSuspense>
         <UserDataProvider>
-          <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-          
-              <AchievementCelebration /></Stack>
+          <ProfileProvider>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+            </Stack>
+            <AchievementCelebration />
+          </ProfileProvider>
         </UserDataProvider>
       </SQLiteProvider>
     </Suspense>

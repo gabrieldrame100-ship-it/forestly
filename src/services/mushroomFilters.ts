@@ -11,7 +11,6 @@ export type Filters = {
   sort: SortOrder;
 };
 
-// Makes text easy to compare: lower case and without Polish letters like ł, ą, ę.
 const normalize = (text: string) =>
   text
     .toLowerCase()

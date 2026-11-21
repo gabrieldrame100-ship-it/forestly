@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = {
   visible: boolean;
-  excludeId?: string | null; // gatunek już wybrany po drugiej stronie
+  excludeId?: string | null;
   onSelect: (id: string) => void;
   onClose: () => void;
 };

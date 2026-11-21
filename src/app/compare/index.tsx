@@ -21,7 +21,6 @@ const rows: { label: string; value: (m: Mushroom) => string }[] = [
   { label: 'Opis', value: (m) => m.description },
 ];
 
-// Pary podobnych gatunków wyliczone z danych atlasu (bez powtórzeń).
 const similarPairs: [Mushroom, Mushroom][] = (() => {
   const seen = new Set<string>();
   const pairs: [Mushroom, Mushroom][] = [];

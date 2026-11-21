@@ -26,7 +26,6 @@ export default function TripDetailScreen() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'missing'>('loading');
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
-  // Wczytuje wyprawę za każdym razem, gdy ekran wraca na wierzch (np. po edycji).
   useFocusEffect(
     useCallback(() => {
       let active = true;
